@@ -1,57 +1,44 @@
-#include <proc_ui/procui.h>
 #include <coreinit/foreground.h>
 #include <coreinit/screen.h>
 #include <stdlib.h>
+#include <whb/proc.h>
 
 int main() {
-    // Initialize ProcUI (process status management library)
-    ProcUIInit(OSSavesDone_ReadyToRelease);
+    // Initialize WHBProc
+    WHBProcInit();
+    
     // Intiialize OSScreen
     OSScreenInit();
 
     // Allocate data for screen
     void* buffer = aligned_alloc(0x100, OSScreenGetBufferSizeEx(SCREEN_DRC));
     OSScreenSetBufferEx(SCREEN_DRC, buffer);
+    
     // Enable screen
     OSScreenEnableEx(SCREEN_DRC, TRUE);
-    // Clear screen
-    OSScreenClearBufferEx(SCREEN_DRC, 0);
+    
+    // Clear screen to a medium green color
+    OSScreenClearBufferEx(SCREEN_DRC, 0x007F0000);
 
     // Write text to screen
-    OSScreenPutFontEx(SCREEN_DRC, 40, 30, "Hello World");
+    OSScreenPutFontEx(SCREEN_DRC, 4, 3, "Hello World");
 
-
-    /// Draw some dots on screen
-    // Red dot
+    /// Draw some pixels on screen
+    // Red pixel
     OSScreenPutPixelEx(SCREEN_DRC, 200, 400, 0xFF000000);
-    // White dot
-    OSScreenPutPixelEx(SCREEN_DRC, 200, 401, 0xFFFFFF00);
+    // White pixel
+    OSScreenPutPixelEx(SCREEN_DRC, 300, 301, 0xFFFFFF00);
 
     // Show on screen
     OSScreenFlipBuffersEx(SCREEN_DRC);
 
-    ProcUIStatus procStatus;
-    while (true)
-    {
-        procStatus = ProcUIProcessMessages(TRUE);
-        // OS asked application to exit
-        if (procStatus == PROCUI_STATUS_EXITING)
-            break;
-        // OS asked application to release foreground resources
-        else if (procStatus == PROCUI_STATUS_RELEASE_FOREGROUND)
-        {
-            ProcUIDrawDoneRelease();
-            continue;
-        }
-    }
-
-    // De-initialize OSScreen
-    OSScreenShutdown();
+    // Wait for OS to request application shutdown
+    while (WHBProcIsRunning()) { }
     
     // Free the buffer
     free(buffer);
-    
-    // De-initialize ProcUI
-    ProcUIShutdown();
+
+    // De-initialize WHBProc
+    WHBProcShutdown();
     return 0;
 }
